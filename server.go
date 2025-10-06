@@ -1,0 +1,36 @@
+package main
+
+import (
+	"net/http"
+	"time"
+	"strconv"
+	"strings"
+)
+
+const serverPort int = 8080
+
+var Server = &http.Server{
+    Addr:           ":" + strconv.Itoa(serverPort),
+    Handler:        nil,
+    ReadTimeout:    10 * time.Second,
+    WriteTimeout:   10 * time.Second,
+    MaxHeaderBytes: 1 << 20,
+}
+
+func setResponseHeaders(rw http.ResponseWriter) {
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+    rw.Header().Set("Content-Type", "application/json")
+}
+
+func SetupHandlers() {
+	http.HandleFunc("/login", func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Access-Control-Allow-Origin", "*")
+
+		if strings.Compare(req.Method, "POST") != 0 {
+			rw.WriteHeader(400)
+			return
+		}
+
+		rw.Header().Set("Set-Cookie", "<test-cookie-value>")
+	})
+}
