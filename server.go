@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 	"strconv"
 	"strings"
+	"github.com/nturbo1/challenge-tracker-service/db"
 )
 
 const serverPort int = 8080
@@ -30,7 +32,18 @@ func SetupHandlers() {
 			rw.WriteHeader(400)
 			return
 		}
+		if db.SessionRepository == nil {
+			rw.WriteHeader(500)
+			return
+		}
 
-		rw.Header().Set("Set-Cookie", "<test-cookie-value>")
+		cookie := &http.Cookie{
+			Name: "session_id",
+			Value: "a;sldkfja;lskdfja;sldfk",
+			MaxAge: 5342452323,
+			HttpOnly: true,
+			Secure: true,
+		}
+		fmt.Println("Just to check cookie string: ", cookie)
 	})
 }

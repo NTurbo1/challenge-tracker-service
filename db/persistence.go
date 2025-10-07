@@ -1,12 +1,12 @@
 package db
 
-var db_files []string = []string{ "users.csv", "cookies.csv" }
+var db_files []string = []string{ "users.csv", "sessions.csv" }
 
 var UsersRepository *UserRepo = nil
-var CookieRepository *CookieRepo = nil
+var SessionRepository *SessionRepo = nil
 
 const usersCSVFilePath = "db/data/users.csv"
-const cookiesCSVFilePath = "db/data/cookies.csv"
+const sessionsCSVFilePath = "db/data/sessions.csv"
 
 func InitDb() error {
 	var err error
@@ -15,7 +15,7 @@ func InitDb() error {
 		return err
 	}
 
-	CookieRepository, err = CreateCookieRepo(cookiesCSVFilePath)
+	SessionRepository, err = CreateSessionRepo(sessionsCSVFilePath)
 	if err != nil {
 		return err
 	}
