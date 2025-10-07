@@ -10,10 +10,14 @@ import (
 	"github.com/nturbo1/challenge-tracker-service/util"
 )
 
+const sessionCSVHeader = "id, userId, createdAt, expiresAt"
+const numSessionCSVCols = 4 // Depends on the sessionCSVHeader variable value. Keep it up to date with it!
+const timeLayout = time.UnixDate
+
 type SessionInfo struct {
-	userId int
-	createdAt time.Time
-	expiresAt time.Time
+	UserId int
+	CreatedAt time.Time
+	ExpiresAt time.Time
 }
 
 type SessionRepo struct {
@@ -21,9 +25,15 @@ type SessionRepo struct {
 	SessionsMap map[string]SessionInfo // keys used in the map are session ids.
 }
 
-const sessionCSVHeader = "id, userId, createdAt, expiresAt"
-const numSessionCSVCols = 4 // Depends on the sessionCSVHeader variable value. Keep it up to date with it!
-const timeLayout = time.UnixDate
+// Function findSession returns a session info by a given session id.
+// The returned session info is nil if there's no session by that id.
+func (sp *SessionRepo) findSession(id string) *SessionInfo {
+	if sessionInfo, exists := sp.SessionsMap[id]; exists {
+		return &sessionInfo
+	}
+	
+	return nil
+}
 
 func CreateSessionRepo(filepath string) (*SessionRepo, error) {
 	fileExists := util.FileExists(filepath)
