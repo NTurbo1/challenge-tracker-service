@@ -11,7 +11,7 @@ import (
 )
 
 type CookieRepo struct {
-	file *os.File
+	File *os.File
 	Cookies []*http.Cookie
 }
 
@@ -127,7 +127,36 @@ func parseCookieCSVLine(csvLine string) (*http.Cookie, error) {
 	return cookiePtr, nil
 }
 
-func findCookie(cookieName string) *http.Cookie {
-	fmt.Println("FixMe: Implement findCookie function in persistence!")
+func (cp *CookieRepo) findCookie(cookieName string) *http.Cookie {
+	cookies := cp.Cookies;
+	for i := 0; i < len(cookies); i++ {
+		if strings.Compare(cookieName, cookies[i].Name) == 0 {
+			return cookies[i]
+		}
+	}
 	return nil
+}
+
+func (cr *CookieRepo) addCookie(c *http.Cookie) error {
+	parsedCookie := parseCookieToCSVRow(c)
+	n, err := cr.File.Write([]byte(parsedCookie))
+	if err != nil {
+		return err
+	}
+	if n < len(parsedCookie) {
+		// TODO: Implement multiplies write tries to write all the bytes instead of giving up immediately.
+		// Can be skipped for now though.
+		return fmt.Errorf("Failed to add a new cookie row to the cookies csv file.")
+	}
+	cr.Cookies = append(cr.Cookies, c)
+	return nil
+}
+
+func parseCookieToCSVRow(c *http.Cookie) string {
+	maxAge := strconv.Itoa(c.MaxAge)
+	secure := strconv.FormatBool(c.Secure)
+	httpOnly := strconv.FormatBool(c.HttpOnly)
+
+	res := c.Name + "," + c.Value + "," + maxAge + "," + secure + "," + httpOnly + "," + c.Domain;
+	return res
 }
