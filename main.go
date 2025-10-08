@@ -1,8 +1,8 @@
 package main
 
 import (
-    "fmt"
 	"github.com/nturbo1/challenge-tracker-service/db"
+	"github.com/nturbo1/challenge-tracker-service/server"
 )
 
 func main() {
@@ -13,7 +13,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-    SetupHandlers()
-    fmt.Println("Server listening on port", serverPort)
-    Server.ListenAndServe()
+
+	err = server.Start()
+	if err != nil {
+		panic(err)
+	}
+	defer server.Close()
 }

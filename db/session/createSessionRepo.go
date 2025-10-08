@@ -7,38 +7,30 @@ import (
 	"strings"
 	"bufio"
 	"time"
-
-	"github.com/nturbo1/challenge-tracker-service/util"
 )
 
 func CreateSessionRepo(filepath string) (*SessionRepo, error) {
-	fileExists := util.FileExists(filepath)
-
 	file, err := os.OpenFile(filepath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		fmt.Println("Failed to open file: ", filepath)
+		fmt.Println("Failed to open session storage file: ", filepath)
 		return nil, err
 	}
 
-	if fileExists {
-		sessionsMap, err := parseSessionsMapFromCSVFile(file)
-		if err != nil {
-			return nil, err
-		}
-
-		return &SessionRepo{
-			File: file,
-			SessionsMap: sessionsMap,
-		}, nil
+	sessionsMap, err := parseSessionsMapFromCSVFile(file)
+	if err != nil {
+		fmt.Println("Failed to parse the sessions csv file")
+		return nil, err
 	}
 
-	return &SessionRepo{
-		File: file,
-		SessionsMap: map[string]SessionInfo{},
-	}, nil
+	return &SessionRepo{file, sessionsMap}, nil
 }
 
 func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) {
+	fmt.Println("Parsing sessions csv file...")
+	if file == nil {
+		return nil, fmt.Errorf("Can't parse nil file.")
+	}
+
 	scanner := bufio.NewScanner(file)
 	lineCount := 0
 	sessionsMap := map[string]SessionInfo{}
@@ -53,6 +45,7 @@ func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) 
 		lineCount++
 
 		if lineCount == 1 {
+			fmt.Println("Line 1 (Header): ", line)
 			if strings.Compare(line, sessionCSVHeader) != 0 {
 				return nil, fmt.Errorf(
 					"Invalid session csv file header: %s. Expected: %s", line, sessionCSVHeader,
@@ -61,11 +54,18 @@ func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) 
 			continue
 		}
 
+		fmt.Printf("Line %d: %s\n", lineCount, line)
 		id, sessionInfoPtr, err := parseSessionInfo(line)
 		if err != nil {
+			fmt.Println("Failed to parse line: ", line)
 			return nil, err
 		}
+		fmt.Println("Parsed to: " + id + "," + sessionInfoPtr.String())
 		sessionsMap[id] = *sessionInfoPtr
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
 	}
 
 	return sessionsMap, nil

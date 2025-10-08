@@ -3,7 +3,6 @@ package user
 import (
 	"fmt"
 	"os"
-	"strings"
 )
 
 type User struct {
@@ -15,23 +14,17 @@ type User struct {
 
 type UserRepo struct {
 	File *os.File
-	Users []*User
+	UsersMap map[string]*User
 }
 
-func (ur *UserRepo) FindUserByUsername(username string) (*User, error) {
-	users := ur.Users
-	if len(users) == 0 {
-		return nil, fmt.Errorf("User not found by username %s", username)
+// Function FindByUsername searches for a user with a given username and returns
+// nil if not found.
+func (ur *UserRepo) FindByUsername(username string) *User {
+	if userPtr, exists := ur.UsersMap[username]; exists {
+		return userPtr
 	}
 
-	for i := 0; i < len(users); i++ {
-		user := users[i]
-		if strings.Compare(user.Username, username) == 0 {
-			return user, nil
-		}
-	}
-
-	return nil, fmt.Errorf("User not found by username %s", username)
+	return nil
 }
 
 func (ur *UserRepo) FlushAllData() error {

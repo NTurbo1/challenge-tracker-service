@@ -23,6 +23,7 @@ type Repo interface {
 var repos []Repo = []Repo{UserRepository, SessionRepository}
 
 func InitDb() error {
+	fmt.Println("Initializing the database...")
 	var err error
 	UserRepository, err = user.CreateUserRepo(usersCSVFilePath)
 	if err != nil {
@@ -34,6 +35,7 @@ func InitDb() error {
 		return err
 	}
 
+	fmt.Println("The database has been initialized!")
 	return nil
 }
 

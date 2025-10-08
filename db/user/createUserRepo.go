@@ -5,49 +5,41 @@ import (
 	"os"
 	"fmt"
 	"strings"
-
-	"github.com/nturbo1/challenge-tracker-service/util"
 )
 
 func CreateUserRepo(usersFilepath string) (*UserRepo, error) {
-	fileExists := util.FileExists(usersFilepath)
-
-	file, err := os.OpenFile(usersFilepath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	file, err := os.OpenFile(usersFilepath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println("Failed to open users storage file ", usersFilepath)
 		return nil, err
 	}
 
-	if fileExists {
-		users, err := parseUsersCSVFile(file)
-		if err != nil {
-			fmt.Println("Failed to parse the users csv file")
-			return nil, err
-		}
-
-		return &UserRepo{file, users}, nil
-	}
-
-	err = util.WriteHeaderLineTo(file, usersCSVHeader)
+	usersMap, err := parseUsersCSVFile(file)
 	if err != nil {
-		fmt.Println("Failed to write the header to the users csv file.")
+		fmt.Println("Failed to parse the users csv file")
 		return nil, err
 	}
 
-	return &UserRepo{file, []*User{}}, nil
+	return &UserRepo{file, usersMap}, nil
 }
 
-func parseUsersCSVFile(file *os.File) ([]*User, error) {
+func parseUsersCSVFile(file *os.File) (map[string]*User, error) {
 	fmt.Println("Parsing users csv file...")
 	if file == nil {
 		return nil, fmt.Errorf("Can't parse nil file.")
 	}
 
-	var users = []*User{}
+	var usersMap = map[string]*User{}
 	scanner := bufio.NewScanner(file)
 	lineCount := 0
+
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		if len(line) == 0 {
+			break;
+		}
+
 		lineCount++;
 
 		if lineCount == 1 {
@@ -67,19 +59,21 @@ func parseUsersCSVFile(file *os.File) ([]*User, error) {
 			return nil, err
 		}
 		fmt.Println("Parsed to: ", *userPtr)
-		users = append(users, userPtr)
+		usersMap[userPtr.Username] = userPtr
 	}
+
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	return usersMap, nil
 }
 
 func parseUserFromCSVLine(CSVLine string) (*User, error) {
 	if len(CSVLine) == 0 {
 		return nil, fmt.Errorf("Empty csv line.")
 	}
+
 	cols := strings.Split(CSVLine, ",")
 	numCols := len(cols)
 	user := User{
