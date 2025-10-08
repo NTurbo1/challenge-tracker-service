@@ -1,26 +1,13 @@
-package db
+package user
 
 import (
-	"fmt"
-	"os"
-	"strings"
 	"bufio"
+	"os"
+	"fmt"
+	"strings"
+
 	"github.com/nturbo1/challenge-tracker-service/util"
 )
-
-type User struct {
-	Firstname string
-	Lastname string
-	Username string
-	Password string
-}
-
-const usersCSVHeader = "username, firstname, lastname, password"
-
-type UserRepo struct {
-	file *os.File
-	Users []*User
-}
 
 func CreateUserRepo(usersFilepath string) (*UserRepo, error) {
 	fileExists := util.FileExists(usersFilepath)
@@ -110,20 +97,4 @@ func parseUserFromCSVLine(CSVLine string) (*User, error) {
 	}
 
 	return &user, nil
-}
-
-func (ur *UserRepo) FindUserByUsername(username string) (*User, error) {
-	users := ur.Users
-	if len(users) == 0 {
-		return nil, fmt.Errorf("User not found by username %s", username)
-	}
-
-	for i := 0; i < len(users); i++ {
-		user := users[i]
-		if strings.Compare(user.Username, username) == 0 {
-			return user, nil
-		}
-	}
-
-	return nil, fmt.Errorf("User not found by username %s", username)
 }

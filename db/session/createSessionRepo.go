@@ -1,44 +1,20 @@
-package db
+package session
 
 import (
 	"fmt"
-	"time"
 	"os"
-	"bufio"
-	"strings"
 	"strconv"
+	"strings"
+	"bufio"
+	"time"
+
 	"github.com/nturbo1/challenge-tracker-service/util"
 )
-
-const sessionCSVHeader = "id, userId, createdAt, expiresAt"
-const numSessionCSVCols = 4 // Depends on the sessionCSVHeader variable value. Keep it up to date with it!
-const timeLayout = time.UnixDate
-
-type SessionInfo struct {
-	UserId int
-	CreatedAt time.Time
-	ExpiresAt time.Time
-}
-
-type SessionRepo struct {
-	File *os.File
-	SessionsMap map[string]SessionInfo // keys used in the map are session ids.
-}
-
-// Function findSession returns a session info by a given session id.
-// The returned session info is nil if there's no session by that id.
-func (sp *SessionRepo) findSession(id string) *SessionInfo {
-	if sessionInfo, exists := sp.SessionsMap[id]; exists {
-		return &sessionInfo
-	}
-	
-	return nil
-}
 
 func CreateSessionRepo(filepath string) (*SessionRepo, error) {
 	fileExists := util.FileExists(filepath)
 
-	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	file, err := os.OpenFile(filepath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println("Failed to open file: ", filepath)
 		return nil, err
@@ -56,12 +32,6 @@ func CreateSessionRepo(filepath string) (*SessionRepo, error) {
 		}, nil
 	}
 
-	err = writeSessionCSVHeaderToFile(file)
-	if err != nil {
-		fmt.Println("Failed to write a header to the session csv file.")
-		return nil, err
-	}
-
 	return &SessionRepo{
 		File: file,
 		SessionsMap: map[string]SessionInfo{},
@@ -75,6 +45,11 @@ func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) 
 
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		if len(line) == 0 {
+			break;
+		}
+
 		lineCount++
 
 		if lineCount == 1 {
@@ -91,10 +66,6 @@ func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) 
 			return nil, err
 		}
 		sessionsMap[id] = *sessionInfoPtr
-	}
-
-	if lineCount == 0 {
-		return nil, fmt.Errorf("Session csv file is empty, there's no header!")
 	}
 
 	return sessionsMap, nil
@@ -141,18 +112,4 @@ func parseSessionInfo(csvLine string) (string, *SessionInfo, error) {
 	}
 
 	return cols[0], &SessionInfo{userId, createdAt, expiresAt}, nil
-}
-
-func writeSessionCSVHeaderToFile(file *os.File) error {
-	headerBytes := []byte(sessionCSVHeader + "\n")
-	n, err := file.Write(headerBytes)
-	if err != nil {
-		return err
-	}
-	// TODO: Implement multiple tries until success, can be ignored for now.
-	if n < len(headerBytes) {
-		return fmt.Errorf("Incomplete header write to the session csv file.")
-	}
-
-	return nil
 }

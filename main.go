@@ -7,6 +7,9 @@ import (
 
 func main() {
 	err := db.InitDb()
+	defer db.Flush()
+	defer db.Close()
+
 	if err != nil {
 		panic(err)
 	}
