@@ -15,7 +15,7 @@ const (
 	PREFIX_ERROR = "[ERROR] "
 )
 
-const HTTP_REQUEST_LOG_FORMAT = "{ url: %s, method: %s, host: %s, headers: %s, body: %s }"
+const HTTP_REQUEST_LOG_FORMAT = "{ url: %s, method: %s, host: %s, headers: %s }"
 
 func Info(format string, v ...any) {
 	updFormat := PREFIX_INFO + format
@@ -33,5 +33,5 @@ func Error(format string, v ...any) {
 }
 
 func HttpRequest(req *http.Request) {
-	Info(HTTP_REQUEST_LOG_FORMAT, req.URL, req.Method, req.Host, req.Header, req.Body)
+	Info(HTTP_REQUEST_LOG_FORMAT, req.URL, req.Method, req.Host, req.Header)
 }
