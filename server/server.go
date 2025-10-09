@@ -11,7 +11,7 @@ const serverPort int = 8080
 
 var server = &http.Server{
     Addr:           ":" + strconv.Itoa(serverPort),
-    Handler:        nil,
+    Handler:        &ServerHandler{},
     ReadTimeout:    10 * time.Second,
     WriteTimeout:   10 * time.Second,
     MaxHeaderBytes: 1 << 20,
@@ -35,7 +35,6 @@ func Close() {
 }
 
 func setResponseHeaders(rw http.ResponseWriter) {
-	rw.Header().Set("Access-Control-Allow-Origin", "*")
     rw.Header().Set("Content-Type", "application/json")
 }
 
