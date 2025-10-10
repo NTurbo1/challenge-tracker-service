@@ -1,10 +1,11 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 	"strconv"
+
+	"github.com/nturbo1/challenge-tracker-service/log"
 )
 
 const serverPort int = 8080
@@ -18,17 +19,17 @@ var server = &http.Server{
 }
 
 func Start() error {
-	fmt.Println("Starting the server...")
+	log.Info("Starting the server...")
     setupHandlers()
 	server.Handler = &CorsHandler{&AuthHandler{globalServeMux}}
-	fmt.Println("HTTP Handlers are set!")
-    fmt.Println("Server listening on port", serverPort)
+	log.Info("HTTP Handlers are set!")
+    log.Info("Server listening on port %d", serverPort)
 
 	return server.ListenAndServe()
 }
 
 func Close() {
-	fmt.Println("Closing the server...")
+	log.Info("Closing the server...")
 	err := server.Close()
 	if err != nil {
 		panic(err)

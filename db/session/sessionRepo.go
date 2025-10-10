@@ -1,12 +1,12 @@
 package session
 
 import (
-	"fmt"
 	"time"
 	"os"
 	"strconv"
 
 	"github.com/nturbo1/challenge-tracker-service/customErrors"
+	"github.com/nturbo1/challenge-tracker-service/log"
 )
 
 type SessionInfo struct {
@@ -87,10 +87,10 @@ func (sp *SessionRepo) verifySessionNotExists(id string) error {
 }
 
 func (sp *SessionRepo) Close() error {
-	fmt.Println("Closing the session repo...")
+	log.Info("Closing the session repo...")
 	err := sp.File.Close()
 	if err != nil {
-		fmt.Println("While closing the session repo file: ", err)
+		log.Error("While closing the session repo file: ", err)
 	}
 
 	return err

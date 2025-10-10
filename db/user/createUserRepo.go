@@ -3,20 +3,23 @@ package user
 import (
 	"bufio"
 	"os"
-	"fmt"
 	"strings"
+	"fmt"
+	"strconv"
+
+	"github.com/nturbo1/challenge-tracker-service/log"
 )
 
 func CreateUserRepo(usersFilepath string) (*UserRepo, error) {
 	file, err := os.OpenFile(usersFilepath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		fmt.Println("Failed to open users storage file ", usersFilepath)
+		log.Error("Failed to open users storage file ", usersFilepath)
 		return nil, err
 	}
 
 	usersMap, err := parseUsersCSVFile(file)
 	if err != nil {
-		fmt.Println("Failed to parse the users csv file")
+		log.Error("Failed to parse the users csv file")
 		return nil, err
 	}
 
@@ -24,7 +27,7 @@ func CreateUserRepo(usersFilepath string) (*UserRepo, error) {
 }
 
 func parseUsersCSVFile(file *os.File) (map[string]*User, error) {
-	fmt.Println("Parsing users csv file...")
+	log.Info("Parsing users csv file...")
 	if file == nil {
 		return nil, fmt.Errorf("Can't parse nil file.")
 	}
@@ -43,7 +46,7 @@ func parseUsersCSVFile(file *os.File) (map[string]*User, error) {
 		lineCount++;
 
 		if lineCount == 1 {
-			fmt.Println("Line 1 (Header): ", line)
+			log.Debug("Line 1 (Header): %s", line)
 			if strings.Compare(usersCSVHeader, line) != 0 {
 				return nil, fmt.Errorf(
 					"Invalid users csv header: %s. Expected to be: %s", line, usersCSVHeader,
@@ -52,13 +55,13 @@ func parseUsersCSVFile(file *os.File) (map[string]*User, error) {
 			continue
 		}
 
-		fmt.Printf("Line %d: %s\n", lineCount, line)
+		log.Debug("Line %d: %s\n", lineCount, line)
 		userPtr, err := parseUserFromCSVLine(line)
 		if err != nil {
-			fmt.Println("Failed to parse line: ", line)
+			log.Error("Failed to parse line: %s", line)
 			return nil, err
 		}
-		fmt.Println("Parsed to: ", *userPtr)
+		log.Debug("Parsed to: %s", userPtr)
 		usersMap[userPtr.Username] = userPtr
 	}
 
@@ -76,18 +79,25 @@ func parseUserFromCSVLine(CSVLine string) (*User, error) {
 
 	cols := strings.Split(CSVLine, ",")
 	numCols := len(cols)
-	user := User{
-		Firstname: cols[0],
+	if numCols != numUsersCSVHeaderCols {
+		return nil, fmt.Errorf(
+			"Line '%s' has %d columns but expected to have %d columns.", 
+			CSVLine, numCols, numUsersCSVHeaderCols,
+		)
 	}
 
-	if numCols > 1 {
-		user.Lastname = cols[1]
-		if numCols > 2 {
-			user.Username = cols[2]
-			if numCols > 3 {
-				user.Password = cols[3]
-			}
-		}
+	userId, err := strconv.Atoi(cols[0])
+	if err != nil {
+		log.Error("Failed to convert user id %s to an integer.", cols[0])
+		return nil, err
+	}
+
+	user := User{
+		Id: userId,
+		Username: cols[1],
+		Firstname: cols[2],
+		Lastname: cols[3],
+		Password: cols[4],
 	}
 
 	return &user, nil

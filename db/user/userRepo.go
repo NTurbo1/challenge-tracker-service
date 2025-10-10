@@ -3,13 +3,22 @@ package user
 import (
 	"fmt"
 	"os"
+	"strconv"
+
+	"github.com/nturbo1/challenge-tracker-service/log"
 )
 
 type User struct {
+	Id int
 	Firstname string
 	Lastname string
 	Username string
 	Password string
+}
+func (u *User) String() string {
+	return "{id: " + strconv.FormatInt(int64(u.Id), 10) + ", firstname: " + u.Firstname +
+	", lastname: " + u.Lastname + ", username: " + u.Username + ", password: " + u.Password +
+	"}" // NOTE: Careful with printing out the password!!!
 }
 
 type UserRepo struct {
@@ -32,10 +41,10 @@ func (ur *UserRepo) FlushAllData() error {
 }
 
 func (ur *UserRepo) Close() error {
-	fmt.Println("Closing the user repo...")
+	log.Info("Closing the user repo...")
 	err := ur.File.Close()
 	if err != nil {
-		fmt.Println("While closing the user repo file: ", err)
+		log.Error("While closing the user repo file: ", err)
 	}
 
 	return err

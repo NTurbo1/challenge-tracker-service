@@ -6,6 +6,8 @@ import (
 )
 
 func main() {
+	// DEFERS DON'T WORK WHEN YOU TERMINATE THE PROGRAM WITH CTRL+C
+	// YOU GOTTA DO SOMETHING WITH IT, BUDDY!
 	err := db.InitDb()
 	defer db.Flush()
 	defer db.Close()

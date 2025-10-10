@@ -1,10 +1,9 @@
 package db
 
 import (
-	"fmt"
-	
 	"github.com/nturbo1/challenge-tracker-service/db/session"
 	"github.com/nturbo1/challenge-tracker-service/db/user"
+	"github.com/nturbo1/challenge-tracker-service/log"
 )
 
 var db_files []string = []string{ "users.csv", "sessions.csv" }
@@ -23,7 +22,7 @@ type Repo interface {
 var repos []Repo = []Repo{UserRepository, SessionRepository}
 
 func InitDb() error {
-	fmt.Println("Initializing the database...")
+	log.Info("Initializing the database...")
 	var err error
 	UserRepository, err = user.CreateUserRepo(usersCSVFilePath)
 	if err != nil {
@@ -35,16 +34,16 @@ func InitDb() error {
 		return err
 	}
 
-	fmt.Println("The database has been initialized!")
+	log.Info("The database has been initialized!")
 	return nil
 }
 
 func Flush() {
-	fmt.Println("Flushing all data :0 ...")
+	log.Info("Flushing all data :0 ...")
 	for _, repo := range repos {
 		err := repo.FlushAllData()
 		if err != nil {
-			fmt.Println(
+			log.Error(
 				"FixMe: FUCK!!! Failed to flush all data for a repository! You gotta " +
 				"figure out something to handle this situation like a real man for real, man!" +
 				"Now, you're gonna loose all of your fucking DATA!!!\n\nBTW, the error is: ", 
@@ -53,7 +52,7 @@ func Flush() {
 		}
 	}
 
-	fmt.Println("Flushed all data successfully! :)")
+	log.Info("Flushed all data successfully! :)")
 }
 
 func Close() {

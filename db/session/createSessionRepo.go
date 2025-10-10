@@ -7,18 +7,20 @@ import (
 	"strings"
 	"bufio"
 	"time"
+
+	"github.com/nturbo1/challenge-tracker-service/log"
 )
 
 func CreateSessionRepo(filepath string) (*SessionRepo, error) {
 	file, err := os.OpenFile(filepath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		fmt.Println("Failed to open session storage file: ", filepath)
+		log.Error("Failed to open session storage file: ", filepath)
 		return nil, err
 	}
 
 	sessionsMap, err := parseSessionsMapFromCSVFile(file)
 	if err != nil {
-		fmt.Println("Failed to parse the sessions csv file")
+		log.Error("Failed to parse the sessions csv file")
 		return nil, err
 	}
 
@@ -26,7 +28,7 @@ func CreateSessionRepo(filepath string) (*SessionRepo, error) {
 }
 
 func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) {
-	fmt.Println("Parsing sessions csv file...")
+	log.Info("Parsing sessions csv file...")
 	if file == nil {
 		return nil, fmt.Errorf("Can't parse nil file.")
 	}
@@ -45,7 +47,7 @@ func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) 
 		lineCount++
 
 		if lineCount == 1 {
-			fmt.Println("Line 1 (Header): ", line)
+			log.Debug("Line 1 (Header): ", line)
 			if strings.Compare(line, sessionCSVHeader) != 0 {
 				return nil, fmt.Errorf(
 					"Invalid session csv file header: %s. Expected: %s", line, sessionCSVHeader,
@@ -54,13 +56,13 @@ func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) 
 			continue
 		}
 
-		fmt.Printf("Line %d: %s\n", lineCount, line)
+		log.Debug("Line %d: %s\n", lineCount, line)
 		id, sessionInfoPtr, err := parseSessionInfo(line)
 		if err != nil {
-			fmt.Println("Failed to parse line: ", line)
+			log.Error("Failed to parse line: ", line)
 			return nil, err
 		}
-		fmt.Println("Parsed to: " + id + "," + sessionInfoPtr.String())
+		log.Debug("Parsed to: " + id + "," + sessionInfoPtr.String())
 		sessionsMap[id] = *sessionInfoPtr
 	}
 
@@ -86,7 +88,7 @@ func parseSessionInfo(csvLine string) (string, *SessionInfo, error) {
 
 	userId, err := strconv.Atoi(cols[1])
 	if err != nil {
-		fmt.Printf(
+		log.Error(
 			"Failed to convert userId value '%s' from session csv file row '%s' to an integer.\n", 
 			cols[1], csvLine,
 		)
@@ -95,7 +97,7 @@ func parseSessionInfo(csvLine string) (string, *SessionInfo, error) {
 
 	createdAt, err := time.Parse(timeLayout, cols[2])
 	if err != nil {
-		fmt.Printf(
+		log.Error(
 			"Failed to parse createdAt value '%s' from session csv file row '%s' to layout '%s'.\n", 
 			cols[2], csvLine, timeLayout,
 		)
@@ -104,7 +106,7 @@ func parseSessionInfo(csvLine string) (string, *SessionInfo, error) {
 
 	expiresAt, err := time.Parse(timeLayout, cols[3])
 	if err != nil {
-		fmt.Printf(
+		log.Error(
 			"Failed to parse expiresAt value '%s' from session csv file row '%s' to layout '%s'.\n",
 			cols[3], csvLine, timeLayout,
 		)
