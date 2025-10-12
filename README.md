@@ -31,7 +31,7 @@
         7. **userId**: user id number; length = (int64) 8 bytes
         8. **dataFilePath**: filepath to a file named in a format <useId>_<year>.csv;
                              length = 512 bytes
-* ### <useId>_<year>.csv:
+* ### \<useId>_\<year>.csv:
     * **row length**: 8 + 1 + 1 + 1 + 8 + 1 = 20 bytes `// last byte is '\n'`
     * **columns**: numDay,marked,offset
     * **values**:
