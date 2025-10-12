@@ -29,9 +29,9 @@
             * 1 -> challenge is active/going
             * 0 -> challenge is inactive/completed/stopped
         7. **userId**: user id number; length = (int64) 8 bytes
-        8. **dataFilePath**: filepath to a file named in a format <useId>_<year>.csv;
+        8. **dataFilePath**: filepath to a file named in a format \<userId>\_\<challengeId>_\<year>.csv;
                              length = 512 bytes
-* ### \<useId>_\<year>.csv:
+* ### \<userId>_\<challengeId>_\<year>.csv:
     * **row length**: 8 + 1 + 1 + 1 + 8 + 1 = 20 bytes `// last byte is '\n'`
     * **columns**: numDay,marked,offset
     * **values**:
