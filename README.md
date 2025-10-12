@@ -9,4 +9,10 @@
 * ### Sessions.csv:
     userId,createdAt,expiresAt
 * ### <useId>_<year>.csv:
-    numDay,marked
+    * columns: numDay,marked
+    * values:
+        1. numDay: day number
+        2. marked:
+            * 1 -> marked/done
+            * 0 -> unmarked/not done
+            * -1 -> blank/not counted/before the challenge start date
