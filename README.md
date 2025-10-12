@@ -31,7 +31,7 @@
         7. **userId**: user id number; length = (int64) 8 bytes
         8. **dataFilePath**: filepath to a file named in a format \<userId>\_\<challengeId>_\<year>.csv;
                              length = 512 bytes
-* ### \<userId>_\<challengeId>_\<year>.csv:
+* ### \<userId>\_\<challengeId>_\<year>.csv:
     * **row length**: 8 + 1 + 1 + 1 + 8 + 1 = 20 bytes `// last byte is '\n'`
     * **columns**: numDay,marked,offset
     * **values**:
