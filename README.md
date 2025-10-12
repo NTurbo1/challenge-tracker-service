@@ -4,10 +4,10 @@
 - Put the storage `.csv` files inside `db/data/` directory. Otherwise the app panics.
 
 ## Data .csv file formats
-* ### Users.csv: 
+* ### users.csv: 
     `The number of users are predetermined and fixed for now, so, there's no need a specific format.`
     id,firstname,lastname,username,password
-* ### Sessions.csv:
+* ### sessions.csv:
     * **row length**: 8 + 1 + 19 + 1 + 19 + 1 + 1 + 1 + 8 + 1 = 60 bytes `// last byte is '\n'`
     * **columns**: userId,createdAt,expiresAt,valid,offset
     * **values**:
