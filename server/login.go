@@ -78,7 +78,7 @@ func handleLogin(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	sessId := generateSessionId()
-	err = saveSession(sessId, user.Id)
+	err = saveSession(sessId, int64(user.Id))
 
 	if err != nil {
 		log.Error("Failed to save a session with id = %s", sessId)
@@ -108,7 +108,7 @@ func generateLoginSessionCookie(sessionId string, domain string) *http.Cookie {
 	}
 }
 
-func saveSession(sessId string, userId int) error {
+func saveSession(sessId string, userId int64) error {
 	currTime := time.Now()
 	var duration time.Duration = loginSessionCookieMaxAge * 1000 * 1000 * 1000 // converted to nano seconds
 	expirationTime := currTime.Add(duration)

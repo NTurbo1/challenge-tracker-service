@@ -3,12 +3,13 @@ package session
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"bufio"
 	"time"
+	"io"
+	"encoding/binary"
 
 	"github.com/nturbo1/challenge-tracker-service/log"
+	"github.com/nturbo1/challenge-tracker-service/util"
 )
 
 func CreateSessionRepo(filepath string) (*SessionRepo, error) {
@@ -18,100 +19,102 @@ func CreateSessionRepo(filepath string) (*SessionRepo, error) {
 		return nil, err
 	}
 
-	sessionsMap, err := parseSessionsMapFromCSVFile(file)
+	validSessionsMap, err := parseSessionsCSVForValidSessions(file)
 	if err != nil {
 		log.Error("Failed to parse the sessions csv file")
 		return nil, err
 	}
 
-	return &SessionRepo{file, sessionsMap}, nil
+	return &SessionRepo{file, validSessionsMap}, nil
 }
 
-func parseSessionsMapFromCSVFile(file *os.File) (map[string]SessionInfo, error) {
+func parseSessionsCSVForValidSessions(file *os.File) (map[string]SessionInfo, error) {
 	log.Info("Parsing sessions csv file...")
 	if file == nil {
 		return nil, fmt.Errorf("Can't parse nil file.")
 	}
 
-	scanner := bufio.NewScanner(file)
-	lineCount := 0
-	sessionsMap := map[string]SessionInfo{}
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if len(line) == 0 {
-			break;
-		}
-
-		lineCount++
-
-		if lineCount == 1 {
-			log.Debug("Line 1 (Header): ", line)
-			if strings.Compare(line, sessionCSVHeader) != 0 {
-				return nil, fmt.Errorf(
-					"Invalid session csv file header: %s. Expected: %s", line, sessionCSVHeader,
-				)
-			}
-			continue
-		}
-
-		log.Debug("Line %d: %s\n", lineCount, line)
-		id, sessionInfoPtr, err := parseSessionInfo(line)
-		if err != nil {
-			log.Error("Failed to parse line: ", line)
-			return nil, err
-		}
-		log.Debug("Parsed to: " + id + "," + sessionInfoPtr.String())
-		sessionsMap[id] = *sessionInfoPtr
-	}
-
-	if err := scanner.Err(); err != nil {
+	var err error
+	readerBufferSize, err := util.Max(sessionCSVRowSize, len(sessionCSVHeader))
+	if err != nil {
 		return nil, err
 	}
 
-	return sessionsMap, nil
+	r := bufio.NewReaderSize(file, readerBufferSize)
+	validSessionsMap := make(map[string]SessionInfo)
+	for {
+		rowBytes, err := r.ReadBytes(util.AsciiNewLine)
+		if err != nil {
+			if err != io.EOF {
+				return nil, err
+			}
+			break
+		}
+
+		id, sessInfoPtr, err := parseRowBytes(rowBytes)
+		if err != nil {
+			return nil, err
+		}
+		validSessionsMap[id] = *sessInfoPtr
+	}
+
+	return validSessionsMap, nil
 }
 
-// Function parseSessionInfo parses a given csv line and returns a session id value and
+// Function parseSessionInfo parses a given csv line bytes and returns a session id value and
 // session info.
-// The return error is not nil, if there's a parsing error.
-func parseSessionInfo(csvLine string) (string, *SessionInfo, error) {
-	if len(csvLine) == 0 {
-		return "", nil, fmt.Errorf("Empty csv line.")
-	}
-	
-	cols := strings.Split(csvLine, ",")
-	if len(cols) != numSessionCSVCols {
-		return "", nil, fmt.Errorf("Invalid session csv line: %s", csvLine)
+// The returned error is not nil, if there's a parsing error.
+func parseRowBytes(rowBytes []byte) (string, *SessionInfo, error) {
+	rowBytesSize := len(rowBytes)
+	if rowBytesSize < sessionCSVRowSize {
+		return "", nil, fmt.Errorf(
+			"Expected a sessions csv row to have length %d, but received %d bytes",
+			sessionCSVRowSize,
+			rowBytesSize,
+		)
 	}
 
-	userId, err := strconv.Atoi(cols[1])
+	id := string(rowBytes[columnOffsetId:valueSizeId])
+	userId := int64(binary.BigEndian.Uint64(rowBytes[columnOffsetUserId:(columnOffsetUserId + valueSizeUserId)]))
+
+	createdAtBytesStr := string(rowBytes[columnOffsetCreatedAt:(columnOffsetCreatedAt + valueSizeCreatedAt)])
+	createdAt, err := time.Parse(timeLayout, createdAtBytesStr)
 	if err != nil {
 		log.Error(
-			"Failed to convert userId value '%s' from session csv file row '%s' to an integer.\n", 
-			cols[1], csvLine,
+			"Failed to parse 'createdAt' bytes string '%s' as %s format",
+			createdAtBytesStr,
+			timeLayout,
 		)
 		return "", nil, err
 	}
 
-	createdAt, err := time.Parse(timeLayout, cols[2])
+	expiresAtBytesStr := string(rowBytes[columnOffsetExpiresAt:(columnOffsetExpiresAt + valueSizeExpiresAt)])
+	expiresAt, err := time.Parse(timeLayout, expiresAtBytesStr)
 	if err != nil {
 		log.Error(
-			"Failed to parse createdAt value '%s' from session csv file row '%s' to layout '%s'.\n", 
-			cols[2], csvLine, timeLayout,
+			"Failed to parse 'expiresAt' bytes string '%s' as %s format",
+			expiresAtBytesStr,
+			timeLayout,
 		)
 		return "", nil, err
 	}
 
-	expiresAt, err := time.Parse(timeLayout, cols[3])
+	validBytes := rowBytes[columnOffsetValid:(columnOffsetValid + valueSizeValid)]
+	valid, err := util.BytesSliceToBool(validBytes)
 	if err != nil {
-		log.Error(
-			"Failed to parse expiresAt value '%s' from session csv file row '%s' to layout '%s'.\n",
-			cols[3], csvLine, timeLayout,
-		)
+		log.Error("Failed to parse 'valid' bytes slice %#v to a boolean", validBytes)
 		return "", nil, err
 	}
 
-	return cols[0], &SessionInfo{userId, createdAt, expiresAt}, nil
+	offset := int64(binary.BigEndian.Uint64(rowBytes[columnOffsetOffset:(columnOffsetOffset + valueSizeOffset)]))
+
+	sessInfo := SessionInfo{
+		UserId: userId,
+		CreatedAt: createdAt,
+		ExpiresAt: expiresAt,
+		Valid: valid,
+		Offset: offset,
+	}
+
+	return id, &sessInfo, nil
 }

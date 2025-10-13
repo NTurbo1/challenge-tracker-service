@@ -13,6 +13,7 @@ const (
 	PREFIX_INFO = "[INFO] "
 	PREFIX_DEBUG = "[DEBUG] "
 	PREFIX_ERROR = "[ERROR] "
+	PREFIX_WARN = "[WARN] "
 )
 
 const HTTP_REQUEST_LOG_FORMAT = "{ url: %s, method: %s, host: %s, headers: %s }"
@@ -29,6 +30,11 @@ func Debug(format string, v ...any) {
 
 func Error(format string, v ...any) {
 	updFormat := PREFIX_ERROR + format
+	logger.Printf(updFormat, v...)
+}
+
+func Warn(format string, v ...any) {
+	updFormat := PREFIX_WARN + format
 	logger.Printf(updFormat, v...)
 }
 
