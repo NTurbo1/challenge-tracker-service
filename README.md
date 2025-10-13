@@ -8,15 +8,14 @@
     `The number of users are predetermined and fixed for now, so, there's no need a specific format.`
     id,firstname,lastname,username,password
 * ### sessions.csv:
-    * **row length**: 48 + 1 + 8 + 1 + 19 + 1 + 19 + 1 + 1 + 1 + 8 + 1 = 109 bytes `// last byte is '\n'`
-    * **columns**: id,userId,createdAt,expiresAt,valid,offset
+    * **row length**: 48 + 1 + 8 + 1 + 19 + 1 + 19 + 1 + 1 + 1 = 100 bytes `// last byte is '\n'`
+    * **columns**: id,userId,createdAt,expiresAt,valid
     * **values**:
         1. **id**: session id; length = 48 bytes
         2. **userId**: user id number; length = (int64) 8 bytes
         3. **createdAt**: time (time.DateTime format) when the session was created; length = 19 bytes
         4. **expiresAt**: time (time.DateTime format) when the session expires; length = 19 bytes
         5. **valid**: indicates if the session is still valid; length = 1 byte
-        6. **offset**: offset of the row in the file; length = (int64) 8 bytes
 * ### challenges.csv:
     * **row length**: 8 + 1 + 8 + 1 + 256 + 1 + 10 + 1 + 10 + 1 + 1 + 1 + 8 + 1 + 512 + 1 = 821 bytes `// last byte is '\n'`
     * **columns**: offset,id,name,startDate,endDate,active,userid,dataFilePath

@@ -90,15 +90,7 @@ func (sp *SessionRepo) InvalidateSession(id string) error {
 }
 
 func (sp *SessionRepo) FlushAllData() error {
-	writeData := sessionCSVHeader + "\n"
-	for id, session := range sp.ValidSessionsMap {
-		row := id + "," + session.String() + "\n"
-		writeData += row
-	}
-	_, err := sp.File.Write([]byte(writeData))
-	if err != nil { // TODO: You can implement multiple tries instead of giving up immediately!
-		return err
-	}
+	log.Error("FlushAllData method should probably be removed, buddy")
 
 	return nil
 }
@@ -149,9 +141,6 @@ func FormatToRow(sessInfo *SessionInfo, id string) ([]byte, error) {
 	expiresAtBytes := []byte(sessInfo.ExpiresAt.Format(timeLayout))
 	validBytes := util.BoolToByteSlice(sessInfo.Valid)
 
-	offsetBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(offsetBytes, uint64(sessInfo.Offset))
-
 	copy(rowBuf[columnOffsetId:], idBytes)
 	rowBuf[columnOffsetId + valueSizeId] = util.AsciiComma
 
@@ -165,10 +154,7 @@ func FormatToRow(sessInfo *SessionInfo, id string) ([]byte, error) {
 	rowBuf[columnOffsetExpiresAt + valueSizeExpiresAt] = util.AsciiComma
 
 	copy(rowBuf[columnOffsetValid:], validBytes)
-	rowBuf[columnOffsetValid + valueSizeValid] = util.AsciiComma
-
-	copy(rowBuf[columnOffsetOffset:], offsetBytes)
-	rowBuf[columnOffsetOffset+valueSizeOffset] = util.AsciiNewLine
+	rowBuf[columnOffsetValid + valueSizeValid] = util.AsciiNewLine
 
 	return rowBuf, nil
 }
@@ -183,7 +169,8 @@ func writeSessionRowAt(file *os.File, sessInfo *SessionInfo, id string) error {
 
 	_, err = file.WriteAt(rowBytes, sessInfo.Offset) // TODO: Handle incomplete write!
 	log.Warn(
-		"Incomplete write case to the session csv file is not handled... Just saying, buddy... Juuust saying...",
+		"Incomplete write case to the session csv file is not handled... " + 
+		"Just saying, buddy... Juuust saying...",
 	)
 	if err != nil {
 		log.Error(

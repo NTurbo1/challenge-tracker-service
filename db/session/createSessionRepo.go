@@ -35,13 +35,13 @@ func parseSessionsCSVForValidSessions(file *os.File) (map[string]SessionInfo, er
 	}
 
 	var err error
-	readerBufferSize, err := util.Max(sessionCSVRowSize, len(sessionCSVHeader))
 	if err != nil {
 		return nil, err
 	}
 
-	r := bufio.NewReaderSize(file, readerBufferSize)
+	r := bufio.NewReaderSize(file, sessionCSVRowSize)
 	validSessionsMap := make(map[string]SessionInfo)
+	var rowIndex int64 = 0
 	for {
 		rowBytes, err := r.ReadBytes(util.AsciiNewLine)
 		if err != nil {
@@ -51,11 +51,12 @@ func parseSessionsCSVForValidSessions(file *os.File) (map[string]SessionInfo, er
 			break
 		}
 
-		id, sessInfoPtr, err := parseRowBytes(rowBytes)
+		id, sessInfoPtr, err := parseRowBytes(rowBytes, rowIndex)
 		if err != nil {
 			return nil, err
 		}
 		validSessionsMap[id] = *sessInfoPtr
+		rowIndex++
 	}
 
 	return validSessionsMap, nil
@@ -64,7 +65,7 @@ func parseSessionsCSVForValidSessions(file *os.File) (map[string]SessionInfo, er
 // Function parseSessionInfo parses a given csv line bytes and returns a session id value and
 // session info.
 // The returned error is not nil, if there's a parsing error.
-func parseRowBytes(rowBytes []byte) (string, *SessionInfo, error) {
+func parseRowBytes(rowBytes []byte, rowIndex int64) (string, *SessionInfo, error) {
 	rowBytesSize := len(rowBytes)
 	if rowBytesSize < sessionCSVRowSize {
 		return "", nil, fmt.Errorf(
@@ -75,25 +76,27 @@ func parseRowBytes(rowBytes []byte) (string, *SessionInfo, error) {
 	}
 
 	id := string(rowBytes[columnOffsetId:valueSizeId])
-	userId := int64(binary.BigEndian.Uint64(rowBytes[columnOffsetUserId:(columnOffsetUserId + valueSizeUserId)]))
 
-	createdAtBytesStr := string(rowBytes[columnOffsetCreatedAt:(columnOffsetCreatedAt + valueSizeCreatedAt)])
-	createdAt, err := time.Parse(timeLayout, createdAtBytesStr)
+	userIdBytes := rowBytes[columnOffsetUserId:(columnOffsetUserId + valueSizeUserId)]
+	userId := int64(binary.BigEndian.Uint64(userIdBytes))
+
+	createdAtBytes := rowBytes[columnOffsetCreatedAt:(columnOffsetCreatedAt + valueSizeCreatedAt)]
+	createdAt, err := time.Parse(timeLayout, string(createdAtBytes))
 	if err != nil {
 		log.Error(
 			"Failed to parse 'createdAt' bytes string '%s' as %s format",
-			createdAtBytesStr,
+			createdAtBytes,
 			timeLayout,
 		)
 		return "", nil, err
 	}
 
-	expiresAtBytesStr := string(rowBytes[columnOffsetExpiresAt:(columnOffsetExpiresAt + valueSizeExpiresAt)])
-	expiresAt, err := time.Parse(timeLayout, expiresAtBytesStr)
+	expiresAtBytes := rowBytes[columnOffsetExpiresAt:(columnOffsetExpiresAt + valueSizeExpiresAt)]
+	expiresAt, err := time.Parse(timeLayout, string(expiresAtBytes))
 	if err != nil {
 		log.Error(
 			"Failed to parse 'expiresAt' bytes string '%s' as %s format",
-			expiresAtBytesStr,
+			expiresAtBytes,
 			timeLayout,
 		)
 		return "", nil, err
@@ -106,7 +109,7 @@ func parseRowBytes(rowBytes []byte) (string, *SessionInfo, error) {
 		return "", nil, err
 	}
 
-	offset := int64(binary.BigEndian.Uint64(rowBytes[columnOffsetOffset:(columnOffsetOffset + valueSizeOffset)]))
+	var offset int64 = rowIndex * sessionCSVRowSize
 
 	sessInfo := SessionInfo{
 		UserId: userId,
