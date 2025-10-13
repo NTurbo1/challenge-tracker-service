@@ -27,6 +27,7 @@ func (si *SessionInfo) String() string {
 
 type SessionRepo struct {
 	File *os.File
+	NumRows int64
 	ValidSessionsMap map[string]SessionInfo // keys used in the map are session ids.
 }
 
@@ -60,6 +61,8 @@ func (sp *SessionRepo) AddSession(id string, sessInfo *SessionInfo) error {
 		return err
 	}
 
+	offset := sp.NumRows * sessionCSVRowSize
+	sessInfo.Offset = offset
 	err := writeSessionRowAt(sp.File, sessInfo, id)
 	if err != nil {
 		return err

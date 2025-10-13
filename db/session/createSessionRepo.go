@@ -19,16 +19,16 @@ func CreateSessionRepo(filepath string) (*SessionRepo, error) {
 		return nil, err
 	}
 
-	validSessionsMap, err := parseSessionsCSVForValidSessions(file)
+	sessRepo, err := parseSessionsCSV(file)
 	if err != nil {
 		log.Error("Failed to parse the sessions csv file")
 		return nil, err
 	}
 
-	return &SessionRepo{file, validSessionsMap}, nil
+	return sessRepo, nil
 }
 
-func parseSessionsCSVForValidSessions(file *os.File) (map[string]SessionInfo, error) {
+func parseSessionsCSV(file *os.File) (*SessionRepo, error) {
 	log.Info("Parsing sessions csv file...")
 	if file == nil {
 		return nil, fmt.Errorf("Can't parse nil file.")
@@ -55,11 +55,18 @@ func parseSessionsCSVForValidSessions(file *os.File) (map[string]SessionInfo, er
 		if err != nil {
 			return nil, err
 		}
-		validSessionsMap[id] = *sessInfoPtr
+		if sessInfoPtr.Valid {
+			validSessionsMap[id] = *sessInfoPtr
+		}
 		rowIndex++
 	}
+	totalNumRows := rowIndex + 1
 
-	return validSessionsMap, nil
+	return &SessionRepo{
+		file,
+		totalNumRows,
+		validSessionsMap,
+	}, nil
 }
 
 // Function parseSessionInfo parses a given csv line bytes and returns a session id value and
