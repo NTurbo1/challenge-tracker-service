@@ -7,7 +7,7 @@ import (
 )
 
 var writer = os.Stdout
-var logger = log.New(writer, "", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
+var logger = log.New(writer, "", log.Ldate|log.Ltime|log.Lmicroseconds|log.LUTC)
 
 const (
 	PREFIX_INFO = "[INFO] "
