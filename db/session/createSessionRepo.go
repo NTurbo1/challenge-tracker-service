@@ -7,6 +7,7 @@ import (
 	"time"
 	"io"
 	"encoding/binary"
+	"strconv"
 
 	"github.com/nturbo1/challenge-tracker-service/log"
 	"github.com/nturbo1/challenge-tracker-service/util"
@@ -60,7 +61,7 @@ func parseSessionsCSV(file *os.File) (*SessionRepo, error) {
 		}
 		rowIndex++
 	}
-	totalNumRows := rowIndex + 1
+	totalNumRows := rowIndex
 
 	return &SessionRepo{
 		file,
@@ -73,6 +74,7 @@ func parseSessionsCSV(file *os.File) (*SessionRepo, error) {
 // session info.
 // The returned error is not nil, if there's a parsing error.
 func parseRowBytes(rowBytes []byte, rowIndex int64) (string, *SessionInfo, error) {
+	log.Debug("Parsing sessions csv row %d...", rowIndex + 1)
 	rowBytesSize := len(rowBytes)
 	if rowBytesSize < sessionCSVRowSize {
 		return "", nil, fmt.Errorf(
@@ -83,9 +85,11 @@ func parseRowBytes(rowBytes []byte, rowIndex int64) (string, *SessionInfo, error
 	}
 
 	id := string(rowBytes[columnOffsetId:valueSizeId])
+	log.Debug("Parsed id: %s", id)
 
 	userIdBytes := rowBytes[columnOffsetUserId:(columnOffsetUserId + valueSizeUserId)]
 	userId := int64(binary.BigEndian.Uint64(userIdBytes))
+	log.Debug("Parsed userId: %d", userId)
 
 	createdAtBytes := rowBytes[columnOffsetCreatedAt:(columnOffsetCreatedAt + valueSizeCreatedAt)]
 	createdAt, err := time.Parse(timeLayout, string(createdAtBytes))
@@ -97,6 +101,7 @@ func parseRowBytes(rowBytes []byte, rowIndex int64) (string, *SessionInfo, error
 		)
 		return "", nil, err
 	}
+	log.Debug("Parsed createdAt: %s", createdAt.Format(timeLayout))
 
 	expiresAtBytes := rowBytes[columnOffsetExpiresAt:(columnOffsetExpiresAt + valueSizeExpiresAt)]
 	expiresAt, err := time.Parse(timeLayout, string(expiresAtBytes))
@@ -108,6 +113,7 @@ func parseRowBytes(rowBytes []byte, rowIndex int64) (string, *SessionInfo, error
 		)
 		return "", nil, err
 	}
+	log.Debug("Parsed expiresAt: %s", expiresAt.Format(timeLayout))
 
 	validBytes := rowBytes[columnOffsetValid:(columnOffsetValid + valueSizeValid)]
 	valid, err := util.BytesSliceToBool(validBytes)
@@ -115,8 +121,10 @@ func parseRowBytes(rowBytes []byte, rowIndex int64) (string, *SessionInfo, error
 		log.Error("Failed to parse 'valid' bytes slice %#v to a boolean", validBytes)
 		return "", nil, err
 	}
+	log.Debug("Parsed valid: %s", strconv.FormatBool(valid))
 
 	var offset int64 = rowIndex * sessionCSVRowSize
+	log.Debug("Calulated offset: %d", offset)
 
 	sessInfo := SessionInfo{
 		UserId: userId,

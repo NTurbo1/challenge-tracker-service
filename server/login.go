@@ -54,6 +54,10 @@ func handleLogin(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	var payload LoginPayload
+	log.Warn(
+		"Unmarshalling the payload to a json without checking the content-type header! " +
+		"Don't expect everything go your way all the time, kid! GROW FUCKIGN UP!!!",
+	)
 	err = json.Unmarshal(buf, &payload)
 
 	if err != nil {
@@ -116,6 +120,9 @@ func saveSession(sessId string, userId int64) error {
 		UserId: userId,
 		CreatedAt: currTime,
 		ExpiresAt: expirationTime,
+		Valid: true,
+		// TODO: Offset is calculated in the session repo add session method, 
+		// so, it's safe to leave it unassigned :)
 	}
 
 	log.Info("Saving a new session: %s", newSess)

@@ -57,11 +57,13 @@ func (sp *SessionRepo) FindValidSession(id string) (*SessionInfo, error) {
 // A returned nil error value means success.
 // Returns SessionExistsError instance if there's a valid/invalid session with a given id already stored.
 func (sp *SessionRepo) AddSession(id string, sessInfo *SessionInfo) error {
+	log.Debug("Adding a new session with id %s...", id)
 	if err := sp.verifySessionNotExists(id); err != nil {
 		return err
 	}
 
 	offset := sp.NumRows * sessionCSVRowSize
+	log.Debug("Calculated the offset for a new session row: %d", offset)
 	sessInfo.Offset = offset
 	err := writeSessionRowAt(sp.File, sessInfo, id)
 	if err != nil {
@@ -144,20 +146,25 @@ func FormatToRow(sessInfo *SessionInfo, id string) ([]byte, error) {
 	expiresAtBytes := []byte(sessInfo.ExpiresAt.Format(timeLayout))
 	validBytes := util.BoolToByteSlice(sessInfo.Valid)
 
-	copy(rowBuf[columnOffsetId:], idBytes)
-	rowBuf[columnOffsetId + valueSizeId] = util.AsciiComma
+	idCommaIndex := columnOffsetId + valueSizeId
+	copy(rowBuf[columnOffsetId:idCommaIndex], idBytes)
+	rowBuf[idCommaIndex] = util.AsciiComma
 
-	copy(rowBuf[columnOffsetUserId:], userIdBytes)
-	rowBuf[columnOffsetUserId + valueSizeUserId] = util.AsciiComma
+	userIdCommmaIndex := columnOffsetUserId + valueSizeUserId
+	copy(rowBuf[columnOffsetUserId:userIdCommmaIndex], userIdBytes)
+	rowBuf[userIdCommmaIndex] = util.AsciiComma
 
-	copy(rowBuf[columnOffsetCreatedAt:], createdAtBytes)
-	rowBuf[columnOffsetCreatedAt + valueSizeCreatedAt] = util.AsciiComma
+	createdAtCommaIndex := columnOffsetCreatedAt + valueSizeCreatedAt
+	copy(rowBuf[columnOffsetCreatedAt:createdAtCommaIndex], createdAtBytes)
+	rowBuf[createdAtCommaIndex] = util.AsciiComma
 
-	copy(rowBuf[columnOffsetExpiresAt:], expiresAtBytes)
-	rowBuf[columnOffsetExpiresAt + valueSizeExpiresAt] = util.AsciiComma
+	expiresAtCommaIndex := columnOffsetExpiresAt + valueSizeExpiresAt
+	copy(rowBuf[columnOffsetExpiresAt:expiresAtCommaIndex], expiresAtBytes)
+	rowBuf[expiresAtCommaIndex] = util.AsciiComma
 
-	copy(rowBuf[columnOffsetValid:], validBytes)
-	rowBuf[columnOffsetValid + valueSizeValid] = util.AsciiNewLine
+	validCommaIndex := columnOffsetValid + valueSizeValid
+	copy(rowBuf[columnOffsetValid:validCommaIndex], validBytes)
+	rowBuf[validCommaIndex] = util.AsciiNewLine
 
 	return rowBuf, nil
 }
